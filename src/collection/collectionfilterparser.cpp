@@ -33,95 +33,122 @@
 #include <QtAlgorithms>
 #include <QAbstractItemModel>
 
-#include "filterparser/filterparsersearchcomparators.h"
-
-#include "playlist.h"
-#include "playlistfilterparser.h"
+#include "core/logging.h"
+#include "core/song.h"
 #include "utilities/searchparserutils.h"
+#include "filterparser/filterparser.h"
+#include "filterparser/filtertree.h"
+#include "filterparser/filterparsersearchcomparators.h"
+#include "collectionitem.h"
+#include "collectionmodel.h"
+#include "collectionfilterparser.h"
+
+namespace {
+QVariant DataFromField(const QString &field, const Song &metadata) {
+
+  if (field == QLatin1String("albumartist")) return metadata.effective_albumartist();
+  if (field == QLatin1String("artist"))      return metadata.artist();
+  if (field == QLatin1String("album"))       return metadata.album();
+  if (field == QLatin1String("title"))       return metadata.title();
+  if (field == QLatin1String("composer"))    return metadata.composer();
+  if (field == QLatin1String("performer"))   return metadata.performer();
+  if (field == QLatin1String("grouping"))    return metadata.grouping();
+  if (field == QLatin1String("genre"))       return metadata.genre();
+  if (field == QLatin1String("comment"))     return metadata.comment();
+  if (field == QLatin1String("track"))       return metadata.track();
+  if (field == QLatin1String("year"))        return metadata.year();
+  if (field == QLatin1String("length"))      return metadata.length_nanosec();
+  if (field == QLatin1String("samplerate"))  return metadata.samplerate();
+  if (field == QLatin1String("bitdepth"))    return metadata.bitdepth();
+  if (field == QLatin1String("bitrate"))     return metadata.bitrate();
+  if (field == QLatin1String("rating"))      return metadata.rating();
+  if (field == QLatin1String("playcount"))   return metadata.playcount();
+  if (field == QLatin1String("skipcount"))   return metadata.skipcount();
+
+  return QVariant();
+
+}
+
+} // namespace
 
 // Filter that applies a SearchTermComparator to all fields of a playlist entry
-class PlaylistFilterTerm : public PlaylistFilterTree {
+class CollectionFilterTerm : public CollectionFilterTree {
  public:
-  explicit PlaylistFilterTerm(FilterParserSearchTermComparator *comparator, const QList<int> &columns) : cmp_(comparator), columns_(columns) {}
-
-  bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const override {
-    for (const int i : columns_) {
-      const QModelIndex idx = model->index(row, i, parent);
-      if (cmp_->Matches(idx.data().toString().toLower())) return true;
+  explicit CollectionFilterTerm(FilterParserSearchTermComparator *comparator, const QStringList &columns) : cmp_(comparator), columns_(columns) {}
+  bool accept(const Song &song) const override {
+    for (const QString &column : columns_) {
+      if (cmp_->Matches(DataFromField(column, song).toString())) return true;
     }
     return false;
   }
   FilterType type() override { return FilterType::Term; }
  private:
   QScopedPointer<FilterParserSearchTermComparator> cmp_;
-  QList<int> columns_;
+  const QStringList columns_;
 };
 
 // Filter that applies a SearchTermComparator to one specific field of a playlist entry
-class PlaylistFilterColumnTerm : public PlaylistFilterTree {
+class CollectionFilterColumnTerm : public CollectionFilterTree {
  public:
-  PlaylistFilterColumnTerm(const int column, FilterParserSearchTermComparator *comparator) : col(column), cmp_(comparator) {}
-
-  bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const override {
-    const QModelIndex idx = model->index(row, col, parent);
-    return cmp_->Matches(idx.data().toString().toLower());
+  CollectionFilterColumnTerm(const QString &column, FilterParserSearchTermComparator *comparator) : column_(column), cmp_(comparator) {}
+  bool accept(const Song &song) const override {
+    return cmp_->Matches(DataFromField(column_, song).toString());
   }
   FilterType type() override { return FilterType::Column; }
  private:
-  int col;
+  const QString column_;
   QScopedPointer<FilterParserSearchTermComparator> cmp_;
 };
 
-class PlaylistNotFilter : public PlaylistFilterTree {
+class CollectionNotFilter : public CollectionFilterTree {
  public:
-  explicit PlaylistNotFilter(const PlaylistFilterTree *inv) : child_(inv) {}
-
-  bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const override {
-    return !child_->accept(row, parent, model);
+  explicit CollectionNotFilter(const CollectionFilterTree *inv) : child_(inv) {}
+  bool accept(const Song &song) const override {
+    return !child_->accept(song);
   }
   FilterType type() override { return FilterType::Not; }
  private:
-  QScopedPointer<const PlaylistFilterTree> child_;
+  QScopedPointer<const CollectionFilterTree> child_;
 };
 
-class PlaylistOrFilter : public PlaylistFilterTree {
+class CollectionOrFilter : public CollectionFilterTree {
  public:
-  ~PlaylistOrFilter() override { qDeleteAll(children_); }
-  virtual void add(PlaylistFilterTree *child) { children_.append(child); }
-  bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const override {
-    return std::any_of(children_.begin(), children_.end(), [row, parent, model](PlaylistFilterTree *child) { return child->accept(row, parent, model); });
+  ~CollectionOrFilter() override { qDeleteAll(children_); }
+  virtual void add(CollectionFilterTree *child) { children_.append(child); }
+  bool accept(const Song &song) const override {
+    return std::any_of(children_.begin(), children_.end(), [song](CollectionFilterTree *child) { return child->accept(song); });
   }
   FilterType type() override { return FilterType::Or; }
  private:
-  QList<PlaylistFilterTree*> children_;
+  QList<CollectionFilterTree*> children_;
 };
 
-class PlaylistAndFilter : public PlaylistFilterTree {
+class CollectionAndFilter : public CollectionFilterTree {
  public:
-  ~PlaylistAndFilter() override { qDeleteAll(children_); }
-  virtual void add(PlaylistFilterTree *child) { children_.append(child); }
-  bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const override {
-    return !std::any_of(children_.begin(), children_.end(), [row, parent, model](PlaylistFilterTree *child) { return !child->accept(row, parent, model); });
+  ~CollectionAndFilter() override { qDeleteAll(children_); }
+  virtual void add(CollectionFilterTree *child) { children_.append(child); }
+  bool accept(const Song &song) const override {
+    return !std::any_of(children_.begin(), children_.end(), [song](CollectionFilterTree *child) { return !child->accept(song); });
   }
   FilterType type() override { return FilterType::And; }
  private:
-  QList<PlaylistFilterTree*> children_;
+  QList<CollectionFilterTree*> children_;
 };
 
-PlaylistFilterParser::PlaylistFilterParser(const QString &filter_string, const QMap<QString, int> &columns, const QSet<int> &numerical_cols) : FilterParser(filter_string), columns_(columns), numerical_columns_(numerical_cols) {}
+CollectionFilterParser::CollectionFilterParser(const QString &filter_string) : FilterParser(filter_string) {}
 
-PlaylistFilterTree *PlaylistFilterParser::parse() {
+CollectionFilterTree *CollectionFilterParser::parse() {
   iter_ = filter_string_.constBegin();
   end_ = filter_string_.constEnd();
   return parseOrGroup();
 }
 
-PlaylistFilterTree *PlaylistFilterParser::parseOrGroup() {
+CollectionFilterTree *CollectionFilterParser::parseOrGroup() {
 
   advance();
-  if (iter_ == end_) return new PlaylistNopFilter;
+  if (iter_ == end_) return new CollectionNopFilter;
 
-  PlaylistOrFilter *group = new PlaylistOrFilter;
+  CollectionOrFilter *group = new CollectionOrFilter;
   group->add(parseAndGroup());
   advance();
   while (checkOr()) {
@@ -133,12 +160,12 @@ PlaylistFilterTree *PlaylistFilterParser::parseOrGroup() {
 
 }
 
-PlaylistFilterTree *PlaylistFilterParser::parseAndGroup() {
+CollectionFilterTree *CollectionFilterParser::parseAndGroup() {
 
   advance();
-  if (iter_ == end_) return new PlaylistNopFilter;
+  if (iter_ == end_) return new CollectionNopFilter;
 
-  PlaylistAndFilter *group = new PlaylistAndFilter();
+  CollectionAndFilter *group = new CollectionAndFilter();
   do {
     group->add(parseSearchExpression());
     advance();
@@ -146,21 +173,21 @@ PlaylistFilterTree *PlaylistFilterParser::parseAndGroup() {
     if (checkOr(false)) {
       break;
     }
-    checkAnd();  // if there's no 'AND', we'll add the term anyway...
+    checkAnd();  // If there's no 'AND', we'll add the term anyway...
   } while (iter_ != end_);
 
   return group;
 
 }
 
-PlaylistFilterTree *PlaylistFilterParser::parseSearchExpression() {
+CollectionFilterTree *CollectionFilterParser::parseSearchExpression() {
 
   advance();
-  if (iter_ == end_) return new PlaylistNopFilter;
+  if (iter_ == end_) return new CollectionNopFilter;
   if (*iter_ == QLatin1Char('(')) {
     ++iter_;
     advance();
-    PlaylistFilterTree *tree = parseOrGroup();
+    CollectionFilterTree *tree = parseOrGroup();
     advance();
     if (iter_ != end_) {
       if (*iter_ == QLatin1Char(')')) {
@@ -171,8 +198,8 @@ PlaylistFilterTree *PlaylistFilterParser::parseSearchExpression() {
   }
   else if (*iter_ == QLatin1Char('-')) {
     ++iter_;
-    PlaylistFilterTree *tree = parseSearchExpression();
-    if (tree->type() != PlaylistFilterTree::FilterType::Nop) return new PlaylistNotFilter(tree);
+    CollectionFilterTree *tree = parseSearchExpression();
+    if (tree->type() != FilterTree::FilterType::Nop) return new CollectionNotFilter(tree);
     return tree;
   }
   else {
@@ -181,16 +208,16 @@ PlaylistFilterTree *PlaylistFilterParser::parseSearchExpression() {
 
 }
 
-PlaylistFilterTree *PlaylistFilterParser::parseSearchTerm() {
+CollectionFilterTree *CollectionFilterParser::parseSearchTerm() {
 
   QString column;
   QString search;
   QString prefix;
-  bool inQuotes = false;
+  bool in_quotes = false;
   for (; iter_ != end_; ++iter_) {
-    if (inQuotes) {
+    if (in_quotes) {
       if (*iter_ == QLatin1Char('"')) {
-        inQuotes = false;
+        in_quotes = false;
       }
       else {
         buf_ += *iter_;
@@ -198,7 +225,7 @@ PlaylistFilterTree *PlaylistFilterParser::parseSearchTerm() {
     }
     else {
       if (*iter_ == QLatin1Char('"')) {
-        inQuotes = true;
+        in_quotes = true;
       }
       else if (column.isEmpty() && *iter_ == QLatin1Char(':')) {
         column = buf_.toLower();
@@ -233,18 +260,17 @@ PlaylistFilterTree *PlaylistFilterParser::parseSearchTerm() {
 
 }
 
-PlaylistFilterTree *PlaylistFilterParser::createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &search) const {
+CollectionFilterTree *CollectionFilterParser::createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &search) const {
 
   if (search.isEmpty() && prefix != QLatin1Char('=')) {
-    return new PlaylistNopFilter;
+    return new CollectionNopFilter;
   }
 
   FilterParserSearchTermComparator *cmp = nullptr;
 
   // Handle the float based Rating Column
-  if (columns_[column] == static_cast<int>(Playlist::Column::Rating)) {
-    float parsed_search = Utilities::ParseSearchRating(search);
-
+  if (column == QLatin1String("rating")) {
+    const float parsed_search = Utilities::ParseSearchRating(search);
     if (prefix == QLatin1Char('=')) {
       cmp = new FilterParserFloatEqComparator(parsed_search);
     }
@@ -270,16 +296,14 @@ PlaylistFilterTree *PlaylistFilterParser::createSearchTermTreeNode(const QString
   else if (prefix == QLatin1String("!=") || prefix == QLatin1String("<>")) {
     cmp = new FilterParserNeComparator(search);
   }
-  else if (!column.isEmpty() && columns_.contains(column) && numerical_columns_.contains(columns_[column])) {
-    // The length column contains the time in seconds (nanoseconds, actually - the "nano" part is handled by the DropTailComparatorDecorator,  though).
+  else if (!column.isEmpty() && Song::kSearchColumns.contains(column) && Song::kNumericalSearchColumns.contains(column)) {
     int search_value = 0;
-    if (columns_[column] == static_cast<int>(Playlist::Column::Length)) {
+    if (column == QLatin1String("length")) {
       search_value = Utilities::ParseSearchTime(search);
     }
     else {
       search_value = search.toInt();
     }
-    // Alright, back to deciding which comparator we'll use
     if (prefix == QLatin1Char('>')) {
       cmp = new FilterParserGtComparator(search_value);
     }
@@ -318,14 +342,14 @@ PlaylistFilterTree *PlaylistFilterParser::createSearchTermTreeNode(const QString
     }
   }
 
-  if (columns_.contains(column)) {
-    if (columns_[column] == static_cast<int>(Playlist::Column::Length)) {
+  if (Song::kSearchColumns.contains(column)) {
+    if (column == QLatin1String("length")) {
       cmp = new FilterParserDropTailComparatorDecorator(cmp);
     }
-    return new PlaylistFilterColumnTerm(columns_[column], cmp);
+    return new CollectionFilterColumnTerm(column, cmp);
   }
   else {
-    return new PlaylistFilterTerm(cmp, columns_.values());
+    return new CollectionFilterTerm(cmp, Song::kSearchColumns);
   }
 
 }

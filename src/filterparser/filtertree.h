@@ -1,6 +1,6 @@
 /*
  * Strawberry Music Player
- * Copyright 2021-2024, Jonas Kvinge <jonas@jkvinge.net>
+ * Copyright 2018-2024, Jonas Kvinge <jonas@jkvinge.net>
  *
  * Strawberry is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,35 +17,31 @@
  *
  */
 
-#ifndef COLLECTIONFILTER_H
-#define COLLECTIONFILTER_H
+#ifndef FILTERTREE_H
+#define FILTERTREE_H
 
 #include "config.h"
 
 #include <QtGlobal>
-#include <QObject>
-#include <QSortFilterProxyModel>
-#include <QVariant>
-#include <QString>
-#include <QStringList>
 
-#include "core/song.h"
-#include "collectionfilterparser.h"
-
-class CollectionItem;
-
-class CollectionFilter : public QSortFilterProxyModel {
-  Q_OBJECT
-
+class FilterTree {
  public:
-  explicit CollectionFilter(QObject *parent = nullptr);
+  explicit FilterTree();
+  virtual ~FilterTree();
 
- protected:
-  bool filterAcceptsRow(const int source_row, const QModelIndex &source_parent) const override;
+  enum class FilterType {
+    Nop = 0,
+    Or,
+    And,
+    Not,
+    Column,
+    Term
+  };
+
+  virtual FilterType type() = 0;
 
  private:
-  mutable QScopedPointer<CollectionFilterTree> filter_tree_;
-  mutable size_t query_hash_;
+  Q_DISABLE_COPY(FilterTree)
 };
 
-#endif  // COLLECTIONFILTER_H
+#endif  // FILTERTREE_H

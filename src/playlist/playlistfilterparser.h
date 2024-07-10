@@ -28,24 +28,18 @@
 #include <QMap>
 #include <QString>
 
+#include "filterparser/filterparser.h"
+#include "filterparser/filtertree.h"
+
 class QAbstractItemModel;
 class QModelIndex;
 
 // Structure for filter parse tree
-class PlaylistFilterTree {
+class PlaylistFilterTree : public FilterTree {
  public:
   PlaylistFilterTree() = default;
   virtual ~PlaylistFilterTree() {}
   virtual bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const = 0;
-  enum class FilterType {
-    Nop = 0,
-    Or,
-    And,
-    Not,
-    Column,
-    Term
-  };
-  virtual FilterType type() = 0;
  private:
   Q_DISABLE_COPY(PlaylistFilterTree)
 };
@@ -57,43 +51,19 @@ class PlaylistNopFilter : public PlaylistFilterTree {
   FilterType type() override { return FilterType::Nop; }
 };
 
-
-// A utility class to parse search filter strings into a decision tree
-// that can decide whether a playlist entry matches the filter.
-//
-// Here's a grammar describing the filters we expect:
-//   　expr      ::= or-group
-//     or-group  ::= and-group ('OR' and-group)*
-//     and-group ::= sexpr ('AND' sexpr)*
-//     sexpr     ::= sterm | '-' sexpr | '(' or-group ')'
-//     sterm     ::= col ':' sstring | sstring
-//     sstring   ::= prefix? string
-//     string    ::= [^:-()" ]+ | '"' [^"]+ '"'
-//     prefix    ::= '=' | '<' | '>' | '<=' | '>='
-//     col       ::= "title" | "artist" | ...
-class PlaylistFilterParser {
+class PlaylistFilterParser : FilterParser {
  public:
   explicit PlaylistFilterParser(const QString &filter, const QMap<QString, int> &columns, const QSet<int> &numerical_cols);
 
   PlaylistFilterTree *parse();
 
  private:
-  void advance();
   PlaylistFilterTree *parseOrGroup();
   PlaylistFilterTree *parseAndGroup();
-  // Check if iter is at the start of 'AND' if so, step over it and return true if not, return false and leave iter where it was
-  bool checkAnd();
-  // Check if iter is at the start of 'OR'
-  bool checkOr(const bool step_over = true);
   PlaylistFilterTree *parseSearchExpression();
   PlaylistFilterTree *parseSearchTerm();
-
   PlaylistFilterTree *createSearchTermTreeNode(const QString &col, const QString &prefix, const QString &search) const;
 
-  QString::const_iterator iter_;
-  QString::const_iterator end_;
-  QString buf_;
-  const QString filterstring_;
   const QMap<QString, int> columns_;
   const QSet<int> numerical_columns_;
 };

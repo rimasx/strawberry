@@ -61,6 +61,10 @@ set(SOURCES
   utilities/searchparserutils.cpp
   utilities/textencodingutils.cpp
 
+  filterparser/filterparser.cpp
+  filterparser/filtertree.cpp
+  filterparser/filterparsersearchcomparators.cpp
+
   engine/enginebase.cpp
   engine/enginedevice.cpp
   engine/devicefinders.cpp
@@ -94,6 +98,7 @@ set(SOURCES
   collection/collectionfilteroptions.cpp
   collection/collectionfilterwidget.cpp
   collection/collectionfilter.cpp
+  collection/collectionfilterparser.cpp
   collection/collectionplaylistitem.cpp
   collection/collectionquery.cpp
   collection/savedgroupingmanager.cpp
