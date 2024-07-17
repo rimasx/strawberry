@@ -31,38 +31,12 @@
 #include "filterparser/filterparser.h"
 #include "filterparser/filtertree.h"
 
-class QAbstractItemModel;
-class QModelIndex;
-
-// Structure for filter parse tree
-class PlaylistFilterTree : public FilterTree {
- public:
-  PlaylistFilterTree() = default;
-  virtual ~PlaylistFilterTree() {}
-  virtual bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const = 0;
- private:
-  Q_DISABLE_COPY(PlaylistFilterTree)
-};
-
-// Trivial filter that accepts *anything*
-class PlaylistNopFilter : public PlaylistFilterTree {
- public:
-  bool accept(const int row, const QModelIndex &parent, const QAbstractItemModel *const model) const override { Q_UNUSED(row); Q_UNUSED(parent); Q_UNUSED(model); return true; }
-  FilterType type() override { return FilterType::Nop; }
-};
-
-class PlaylistFilterParser : FilterParser {
+class PlaylistFilterParser : public FilterParser {
  public:
   explicit PlaylistFilterParser(const QString &filter, const QMap<QString, int> &columns, const QSet<int> &numerical_cols);
 
-  PlaylistFilterTree *parse();
-
  private:
-  PlaylistFilterTree *parseOrGroup();
-  PlaylistFilterTree *parseAndGroup();
-  PlaylistFilterTree *parseSearchExpression();
-  PlaylistFilterTree *parseSearchTerm();
-  PlaylistFilterTree *createSearchTermTreeNode(const QString &col, const QString &prefix, const QString &search) const;
+  FilterTree *createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &search) const override;
 
   const QMap<QString, int> columns_;
   const QSet<int> numerical_columns_;

@@ -24,15 +24,13 @@
 
 #include "config.h"
 
-#include <QtGlobal>
-#include <QObject>
+#include <QSortFilterProxyModel>
 #include <QMap>
 #include <QSet>
 #include <QScopedPointer>
 #include <QString>
-#include <QSortFilterProxyModel>
 
-class PlaylistFilterTree;
+#include "filterparser/filtertree.h"
 
 class PlaylistFilter : public QSortFilterProxyModel {
   Q_OBJECT
@@ -48,14 +46,14 @@ class PlaylistFilter : public QSortFilterProxyModel {
   // public so Playlist::NextVirtualIndex and friends can get at it
   bool filterAcceptsRow(const int source_row, const QModelIndex &source_parent) const override;
 
-  void SetFilterText(const QString &filter_text);
+  void SetFilterString(const QString &filter_string);
 
-  QString filter_text() const { return filter_text_; }
+  QString filter_string() const { return filter_string_; }
   QMap<QString, int> column_names() const { return column_names_; }
 
  private:
   // Mutable because they're modified from filterAcceptsRow() const
-  mutable QScopedPointer<PlaylistFilterTree> filter_tree_;
+  mutable QScopedPointer<FilterTree> filter_tree_;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mutable size_t query_hash_;
 #else
@@ -64,7 +62,7 @@ class PlaylistFilter : public QSortFilterProxyModel {
 
   QMap<QString, int> column_names_;
   QSet<int> numerical_columns_;
-  QString filter_text_;
+  QString filter_string_;
 };
 
 #endif  // PLAYLISTFILTER_H

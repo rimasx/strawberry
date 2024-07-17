@@ -19,12 +19,7 @@
 
 #include "config.h"
 
-#include <utility>
-
-#include <QSortFilterProxyModel>
-#include <QVariant>
 #include <QString>
-#include <QStringList>
 
 #include "core/logging.h"
 

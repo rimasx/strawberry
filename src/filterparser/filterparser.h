@@ -3,6 +3,7 @@
  * This file was part of Clementine.
  * Copyright 2012, David Sansome <me@davidsansome.com>
  * Copyright 2018-2024, Jonas Kvinge <jonas@jkvinge.net>
+ * Copyright 2023, Daniel Ostertag <daniel.ostertag@dakes.de>
  *
  * Strawberry is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +27,8 @@
 
 #include <QString>
 
+class FilterTree;
+
 // A utility class to parse search filter strings into a decision tree
 // that can decide whether a playlist entry matches the filter.
 //
@@ -43,12 +46,24 @@ class FilterParser {
  public:
   explicit FilterParser(const QString &filter_string);
 
+  FilterTree *parse();
+
  protected:
   void advance();
   // Check if iter is at the start of 'AND' if so, step over it and return true if not, return false and leave iter where it was
   bool checkAnd();
   // Check if iter is at the start of 'OR'
   bool checkOr(const bool step_over = true);
+
+  FilterTree *parseOrGroup();
+  FilterTree *parseAndGroup();
+  FilterTree *parseSearchExpression();
+  FilterTree *parseSearchTerm();
+
+  static int ParseSearchTime(const QString &time_str);
+  static float ParseSearchRating(const QString &rating_str);
+
+  virtual FilterTree *createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &search) const = 0;
 
   const QString filter_string_;
   QString::const_iterator iter_;

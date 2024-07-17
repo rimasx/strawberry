@@ -22,17 +22,10 @@
 
 #include "config.h"
 
-#include <QtGlobal>
-#include <QObject>
 #include <QSortFilterProxyModel>
-#include <QVariant>
-#include <QString>
-#include <QStringList>
+#include <QScopedPointer>
 
-#include "core/song.h"
-#include "collectionfilterparser.h"
-
-class CollectionItem;
+#include "filterparser/filtertree.h"
 
 class CollectionFilter : public QSortFilterProxyModel {
   Q_OBJECT
@@ -44,7 +37,7 @@ class CollectionFilter : public QSortFilterProxyModel {
   bool filterAcceptsRow(const int source_row, const QModelIndex &source_parent) const override;
 
  private:
-  mutable QScopedPointer<CollectionFilterTree> filter_tree_;
+  mutable QScopedPointer<FilterTree> filter_tree_;
   mutable size_t query_hash_;
 };
 

@@ -30,36 +30,13 @@
 #include <QStringList>
 
 #include "filterparser/filterparser.h"
-#include "filterparser/filtertree.h"
-#include "collectionitem.h"
 
-class CollectionFilterTree : public FilterTree {
- public:
-  CollectionFilterTree() = default;
-  virtual ~CollectionFilterTree() {}
-  virtual bool accept(const Song &song) const = 0;
- private:
-  Q_DISABLE_COPY(CollectionFilterTree)
-};
-
-// Trivial filter that accepts *anything*
-class CollectionNopFilter : public CollectionFilterTree {
- public:
-  bool accept(const Song &song) const override { Q_UNUSED(song); return true; }
-  FilterType type() override { return FilterType::Nop; }
-};
+class FilterTree;
 
 class CollectionFilterParser : public FilterParser {
  public:
   explicit CollectionFilterParser(const QString &filter_string);
-  CollectionFilterTree *parse();
-
- private:
-  CollectionFilterTree *parseOrGroup();
-  CollectionFilterTree *parseAndGroup();
-  CollectionFilterTree *parseSearchExpression();
-  CollectionFilterTree *parseSearchTerm();
-  CollectionFilterTree *createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &search) const;
+  FilterTree *createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &search) const override;
 };
 
 #endif  // COLLECTIONFILTERPARSER_H

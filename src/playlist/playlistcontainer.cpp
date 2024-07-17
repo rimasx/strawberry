@@ -234,7 +234,7 @@ void PlaylistContainer::SetViewModel(Playlist *playlist, const int scroll_positi
   emit ViewSelectionModelChanged();
 
   // Update filter
-  ui_->search_field->setText(playlist->filter()->filter_text());
+  ui_->search_field->setText(playlist->filter()->filter_string());
 
   // Update the no matches label
   QObject::connect(playlist_->filter(), &QSortFilterProxyModel::modelReset, this, &PlaylistContainer::UpdateNoMatchesLabel);
@@ -452,7 +452,7 @@ void PlaylistContainer::UpdateFilter() {
 
   if (!ui_->toolbar->isVisible()) return;
 
-  manager_->current()->filter()->SetFilterText(ui_->search_field->text());
+  manager_->current()->filter()->SetFilterString(ui_->search_field->text());
   ui_->playlist->JumpToCurrentlyPlayingTrack();
 
   UpdateNoMatchesLabel();

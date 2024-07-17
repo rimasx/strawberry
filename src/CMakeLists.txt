@@ -58,7 +58,6 @@ set(SOURCES
   utilities/filemanagerutils.cpp
   utilities/coverutils.cpp
   utilities/screenutils.cpp
-  utilities/searchparserutils.cpp
   utilities/textencodingutils.cpp
 
   filterparser/filterparser.cpp

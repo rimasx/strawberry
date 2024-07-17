@@ -23,16 +23,15 @@
 
 #include <QObject>
 #include <QString>
-#include <QAbstractItemModel>
-#include <QSortFilterProxyModel>
 
 #include "playlist/playlist.h"
+#include "filterparser/filtertree.h"
 #include "playlistfilter.h"
 #include "playlistfilterparser.h"
 
 PlaylistFilter::PlaylistFilter(QObject *parent)
     : QSortFilterProxyModel(parent),
-      filter_tree_(new PlaylistNopFilter),
+      filter_tree_(new NopFilter),
       query_hash_(0) {
 
   setDynamicSortFilter(true);
@@ -83,13 +82,13 @@ void PlaylistFilter::sort(int column, Qt::SortOrder order) {
 bool PlaylistFilter::filterAcceptsRow(const int row, const QModelIndex &parent) const {
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  size_t hash = qHash(filter_text_);
+  size_t hash = qHash(filter_string_);
 #else
-  uint hash = qHash(filter_text_);
+  uint hash = qHash(filter_string_);
 #endif
   if (hash != query_hash_) {
     // Parse the query
-    PlaylistFilterParser p(filter_text_, column_names_, numerical_columns_);
+    PlaylistFilterParser p(filter_string_, column_names_, numerical_columns_);
     filter_tree_.reset(p.parse());
 
     query_hash_ = hash;
@@ -100,9 +99,9 @@ bool PlaylistFilter::filterAcceptsRow(const int row, const QModelIndex &parent) 
 
 }
 
-void PlaylistFilter::SetFilterText(const QString &filter_text) {
+void PlaylistFilter::SetFilterString(const QString &filter_string) {
 
-  filter_text_ = filter_text;
-  setFilterFixedString(filter_text);
+  filter_string_ = filter_string;
+  setFilterFixedString(filter_string);
 
 }
