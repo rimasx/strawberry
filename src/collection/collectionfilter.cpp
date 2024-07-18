@@ -64,6 +64,6 @@ bool CollectionFilter::filterAcceptsRow(const int source_row, const QModelIndex 
     query_hash_ = hash;
   }
 
-  return item->type == CollectionItem::Type::Song && item->metadata.is_valid() && filter_tree_->accept(item->metadata);
+  return item->metadata.is_valid() && filter_tree_->accept(item->metadata);
 
 }
