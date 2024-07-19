@@ -181,7 +181,7 @@ FilterTree *FilterParser::parseSearchExpression() {
 FilterTree *FilterParser::parseSearchTerm() {
 
   QString column;
-  QString search;
+  QString value;
   QString prefix;
   bool in_quotes = false;
   for (; iter_ != end_; ++iter_) {
@@ -223,10 +223,10 @@ FilterTree *FilterParser::parseSearchTerm() {
     }
   }
 
-  search = buf_.toLower();
+  value = buf_.toLower();
   buf_.clear();
 
-  return createSearchTermTreeNode(column, prefix, search);
+  return createSearchTermTreeNode(column, prefix, value);
 
 }
 
