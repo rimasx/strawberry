@@ -62,7 +62,6 @@ set(SOURCES
 
   filterparser/filterparser.cpp
   filterparser/filtertree.cpp
-  filterparser/filterparsersearchcomparators.cpp
 
   engine/enginebase.cpp
   engine/enginedevice.cpp
