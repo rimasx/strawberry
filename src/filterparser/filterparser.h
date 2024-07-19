@@ -30,7 +30,7 @@
 class FilterTree;
 
 // A utility class to parse search filter strings into a decision tree
-// that can decide whether a playlist entry matches the filter.
+// that can decide whether a song matches the filter.
 //
 // Here's a grammar describing the filters we expect:
 //   　expr      ::= or-group
@@ -48,6 +48,8 @@ class FilterParser {
 
   FilterTree *parse();
 
+  static QString ToolTip();
+
  protected:
   void advance();
   // Check if iter is at the start of 'AND' if so, step over it and return true if not, return false and leave iter where it was
@@ -60,10 +62,10 @@ class FilterParser {
   FilterTree *parseSearchExpression();
   FilterTree *parseSearchTerm();
 
-  static int ParseSearchTime(const QString &time_str);
-  static float ParseSearchRating(const QString &rating_str);
+  FilterTree *createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &value) const;
 
-  virtual FilterTree *createSearchTermTreeNode(const QString &column, const QString &prefix, const QString &search) const = 0;
+  static int ParseTime(const QString &time_str);
+  static float ParseRating(const QString &rating_str);
 
   const QString filter_string_;
   QString::const_iterator iter_;

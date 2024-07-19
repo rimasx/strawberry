@@ -23,8 +23,9 @@
 
 #include "core/logging.h"
 
+#include "filterparser/filterparser.h"
+#include "filterparser/filtertree.h"
 #include "collectionfilter.h"
-#include "collectionfilterparser.h"
 #include "collectionmodel.h"
 #include "collectionitem.h"
 
@@ -45,25 +46,30 @@ bool CollectionFilter::filterAcceptsRow(const int source_row, const QModelIndex 
   CollectionItem *item = model->IndexToItem(idx);
   if (!item) return false;
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  const QString filter_string = filterRegularExpression().pattern().remove(QLatin1Char('\\'));
-#else
-  const QString filter_string = filterRegExp().pattern();
-#endif
-
-  if (filter_string.isEmpty()) return true;
+  if (filter_string_.isEmpty()) return true;
 
   if (item->type != CollectionItem::Type::Song) {
     return item->type == CollectionItem::Type::LoadingIndicator;
   }
 
-  size_t hash = qHash(filter_string);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  const size_t hash = qHash(filter_string_);
+#else
+  const uint hash = qHash(filter_string_);
+#endif
   if (hash != query_hash_) {
-    CollectionFilterParser p(filter_string);
+    FilterParser p(filter_string_);
     filter_tree_.reset(p.parse());
     query_hash_ = hash;
   }
 
   return item->metadata.is_valid() && filter_tree_->accept(item->metadata);
+
+}
+
+void CollectionFilter::SetFilterString(const QString &filter_string) {
+
+  filter_string_ = filter_string;
+  setFilterFixedString(filter_string);
 
 }

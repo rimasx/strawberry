@@ -49,6 +49,7 @@
 #include "core/shared_ptr.h"
 #include "core/iconloader.h"
 #include "core/settings.h"
+#include "filterparser/filterparser.h"
 #include "playlist.h"
 #include "playlisttabbar.h"
 #include "playlistview.h"
@@ -124,37 +125,7 @@ PlaylistContainer::PlaylistContainer(QWidget *parent)
   QObject::connect(ui_->playlist, &PlaylistView::FocusOnFilterSignal, this, &PlaylistContainer::FocusOnFilter);
   ui_->search_field->installEventFilter(this);
 
-  QString available_fields = PlaylistFilter().column_names().keys().join(QLatin1String(", "));
-  ui_->search_field->setToolTip(
-    QLatin1String("<html><head/><body><p>") +
-    tr("Prefix a search term with a field name to limit the search to that field, e.g.:") +
-    QLatin1Char(' ') +
-    QLatin1String("<span style=\"font-weight:600;\">") +
-    tr("artist") +
-    QLatin1String(":</span><span style=\"font-style:italic;\">Strawbs</span> ") +
-    tr("searches the playlist for all artists that contain the word %1. ").arg(QLatin1String("Strawbs")) +
-    QLatin1String("</p><p>") +
-
-    tr("Search terms for numerical fields can be prefixed with %1 or %2 to refine the search, e.g.: ")
-      .arg(QLatin1String(" =, !=, &lt;, &gt;, &lt;="), QLatin1String("&gt;=")) +
-    QLatin1String("<span style=\"font-weight:600;\">") +
-    tr("rating") +
-    QLatin1String("</span>") +
-    QLatin1String(":>=") +
-    QLatin1String("<span style=\"font-weight:italic;\">4</span>") +
-    QLatin1String("</p><p>") +
-
-    tr("Multiple search terms can also be combined with \"%1\" (default) and \"%2\", as well as grouped with parentheses. ")
-      .arg(QLatin1String("AND"), QLatin1String("OR")) +
-
-    QLatin1String("</p><p><span style=\"font-weight:600;\">") +
-    tr("Available fields") +
-    QLatin1String(": ") + QLatin1String("</span><span style=\"font-style:italic;\">") +
-    available_fields +
-    QLatin1String("</span>.") +
-    QLatin1String("</p></body></html>")
-  );
-
+  ui_->search_field->setToolTip(FilterParser::ToolTip());
 
   ReloadSettings();
 

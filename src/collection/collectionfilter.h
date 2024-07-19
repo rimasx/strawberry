@@ -33,12 +33,20 @@ class CollectionFilter : public QSortFilterProxyModel {
  public:
   explicit CollectionFilter(QObject *parent = nullptr);
 
+  void SetFilterString(const QString &filter_string);
+  QString filter_string() const { return filter_string_; }
+
  protected:
   bool filterAcceptsRow(const int source_row, const QModelIndex &source_parent) const override;
 
  private:
   mutable QScopedPointer<FilterTree> filter_tree_;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mutable size_t query_hash_;
+#else
+  mutable uint query_hash_;
+#endif
+  QString filter_string_;
 };
 
 #endif  // COLLECTIONFILTER_H

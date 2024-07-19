@@ -24,6 +24,7 @@
 
 #include "config.h"
 
+#include <QVariant>
 #include <QString>
 #include <QScopedPointer>
 
@@ -31,7 +32,7 @@ class FilterParserSearchTermComparator {
  public:
   FilterParserSearchTermComparator() = default;
   virtual ~FilterParserSearchTermComparator() = default;
-  virtual bool Matches(const QString &element) const = 0;
+  virtual bool Matches(const QVariant &value) const = 0;
  private:
   Q_DISABLE_COPY(FilterParserSearchTermComparator)
 };
@@ -39,9 +40,9 @@ class FilterParserSearchTermComparator {
 // "compares" by checking if the field contains the search term
 class FilterParserDefaultComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserDefaultComparator(const QString &value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.contains(search_term_, Qt::CaseInsensitive);
+  explicit FilterParserDefaultComparator(const QString &search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toString().contains(search_term_, Qt::CaseInsensitive);
   }
  private:
   QString search_term_;
@@ -49,72 +50,212 @@ class FilterParserDefaultComparator : public FilterParserSearchTermComparator {
   Q_DISABLE_COPY(FilterParserDefaultComparator)
 };
 
-class FilterParserEqComparator : public FilterParserSearchTermComparator {
+class FilterParserTextEqComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserEqComparator(const QString &value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return search_term_ == element;
+  explicit FilterParserTextEqComparator(const QString &search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return search_term_.compare(value.toString(), Qt::CaseInsensitive) == 0;
   }
  private:
   QString search_term_;
 };
 
-class FilterParserNeComparator : public FilterParserSearchTermComparator {
+class FilterParserTextNeComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserNeComparator(const QString &value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return search_term_ != element;
+  explicit FilterParserTextNeComparator(const QString &search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return search_term_.compare(value.toString(), Qt::CaseInsensitive) != 0;
   }
  private:
   QString search_term_;
 };
 
-class FilterParserLexicalGtComparator : public FilterParserSearchTermComparator {
+class FilterParserIntEqComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserLexicalGtComparator(const QString &value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element > search_term_;
+  explicit FilterParserIntEqComparator(const int search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toInt() == search_term_;
   }
  private:
-  QString search_term_;
+  int search_term_;
 };
 
-class FilterParserLexicalGeComparator : public FilterParserSearchTermComparator {
+class FilterParserIntNeComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserLexicalGeComparator(const QString &value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element >= search_term_;
+  explicit FilterParserIntNeComparator(const int search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toInt() != search_term_;
   }
  private:
-  QString search_term_;
+  int search_term_;
 };
 
-class FilterParserLexicalLtComparator : public FilterParserSearchTermComparator {
+class FilterParserIntGtComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserLexicalLtComparator(const QString &value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element < search_term_;
+  explicit FilterParserIntGtComparator(const int search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toInt() > search_term_;
   }
  private:
-  QString search_term_;
+  int search_term_;
 };
 
-class FilterParserLexicalLeComparator : public FilterParserSearchTermComparator {
+class FilterParserIntGeComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserLexicalLeComparator(const QString &value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element <= search_term_;
+  explicit FilterParserIntGeComparator(const int search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toInt() >= search_term_;
   }
  private:
-  QString search_term_;
+  int search_term_;
+};
+
+class FilterParserIntLtComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserIntLtComparator(const int search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toInt() < search_term_;
+  }
+ private:
+  int search_term_;
+};
+
+class FilterParserIntLeComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserIntLeComparator(const int search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toInt() <= search_term_;
+  }
+ private:
+  int search_term_;
+};
+
+class FilterParserUIntEqComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserUIntEqComparator(const uint search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toUInt() == search_term_;
+  }
+ private:
+  uint search_term_;
+};
+
+class FilterParserUIntNeComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserUIntNeComparator(const uint search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toUInt() != search_term_;
+  }
+ private:
+  uint search_term_;
+};
+
+class FilterParserUIntGtComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserUIntGtComparator(const uint search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toUInt() > search_term_;
+  }
+ private:
+  uint search_term_;
+};
+
+class FilterParserUIntGeComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserUIntGeComparator(const uint search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toUInt() >= search_term_;
+  }
+ private:
+  uint search_term_;
+};
+
+class FilterParserUIntLtComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserUIntLtComparator(const uint search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toUInt() < search_term_;
+  }
+ private:
+  uint search_term_;
+};
+
+class FilterParserUIntLeComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserUIntLeComparator(const uint search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toUInt() <= search_term_;
+  }
+ private:
+  uint search_term_;
+};
+
+class FilterParserInt64EqComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserInt64EqComparator(const qint64 search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toLongLong() == search_term_;
+  }
+ private:
+  qint64 search_term_;
+};
+
+class FilterParserInt64NeComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserInt64NeComparator(const qint64 search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toLongLong() != search_term_;
+  }
+ private:
+  qint64 search_term_;
+};
+
+class FilterParserInt64GtComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserInt64GtComparator(const qint64 search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toLongLong() > search_term_;
+  }
+ private:
+  qint64 search_term_;
+};
+
+class FilterParserInt64GeComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserInt64GeComparator(const qint64 search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toLongLong() >= search_term_;
+  }
+ private:
+  qint64 search_term_;
+};
+
+class FilterParserInt64LtComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserInt64LtComparator(const qint64 search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toLongLong() < search_term_;
+  }
+ private:
+  qint64 search_term_;
+};
+
+class FilterParserInt64LeComparator : public FilterParserSearchTermComparator {
+ public:
+  explicit FilterParserInt64LeComparator(const qint64 search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toLongLong() <= search_term_;
+  }
+ private:
+  qint64 search_term_;
 };
 
 // Float Comparators are for the rating
 class FilterParserFloatEqComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserFloatEqComparator(const float value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return search_term_ == element.toFloat();
+  explicit FilterParserFloatEqComparator(const float search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toFloat() == search_term_;
   }
  private:
   float search_term_;
@@ -123,8 +264,8 @@ class FilterParserFloatEqComparator : public FilterParserSearchTermComparator {
 class FilterParserFloatNeComparator : public FilterParserSearchTermComparator {
  public:
   explicit FilterParserFloatNeComparator(const float value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return search_term_ != element.toFloat();
+  bool Matches(const QVariant &value) const override {
+    return value.toFloat() != search_term_;
   }
  private:
   float search_term_;
@@ -132,9 +273,9 @@ class FilterParserFloatNeComparator : public FilterParserSearchTermComparator {
 
 class FilterParserFloatGtComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserFloatGtComparator(const float value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toFloat() > search_term_;
+  explicit FilterParserFloatGtComparator(const float search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toFloat() > search_term_;
   }
  private:
   float search_term_;
@@ -142,9 +283,9 @@ class FilterParserFloatGtComparator : public FilterParserSearchTermComparator {
 
 class FilterParserFloatGeComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserFloatGeComparator(const float value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toFloat() >= search_term_;
+  explicit FilterParserFloatGeComparator(const float search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toFloat() >= search_term_;
   }
  private:
   float search_term_;
@@ -152,9 +293,9 @@ class FilterParserFloatGeComparator : public FilterParserSearchTermComparator {
 
 class FilterParserFloatLtComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserFloatLtComparator(const float value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toFloat() < search_term_;
+  explicit FilterParserFloatLtComparator(const float search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toFloat() < search_term_;
   }
  private:
   float search_term_;
@@ -162,82 +303,22 @@ class FilterParserFloatLtComparator : public FilterParserSearchTermComparator {
 
 class FilterParserFloatLeComparator : public FilterParserSearchTermComparator {
  public:
-  explicit FilterParserFloatLeComparator(const float value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toFloat() <= search_term_;
+  explicit FilterParserFloatLeComparator(const float search_term) : search_term_(search_term) {}
+  bool Matches(const QVariant &value) const override {
+    return value.toFloat() <= search_term_;
   }
  private:
   float search_term_;
 };
 
-class FilterParserGtComparator : public FilterParserSearchTermComparator {
- public:
-  explicit FilterParserGtComparator(const int value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toInt() > search_term_;
-  }
- private:
-  int search_term_;
-};
-
-class FilterParserGeComparator : public FilterParserSearchTermComparator {
- public:
-  explicit FilterParserGeComparator(const int value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toInt() >= search_term_;
-  }
- private:
-  int search_term_;
-};
-
-class FilterParserLtComparator : public FilterParserSearchTermComparator {
- public:
-  explicit FilterParserLtComparator(const int value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toInt() < search_term_;
-  }
- private:
-  int search_term_;
-};
-
-class FilterParserLeComparator : public FilterParserSearchTermComparator {
- public:
-  explicit FilterParserLeComparator(const int value) : search_term_(value) {}
-  bool Matches(const QString &element) const override {
-    return element.toInt() <= search_term_;
-  }
- private:
-  int search_term_;
-};
-
-// The length field of the playlist (entries) contains a song's running time in nanoseconds.
-// However, We don't really care about nanoseconds, just seconds.
-// Thus, with this decorator we drop the last 9 digits, if that many are present.
-class FilterParserDropTailComparatorDecorator : public FilterParserSearchTermComparator {
- public:
-  explicit FilterParserDropTailComparatorDecorator(FilterParserSearchTermComparator *cmp) : cmp_(cmp) {}
-
-  bool Matches(const QString &element) const override {
-    if (element.length() > 9) {
-      return cmp_->Matches(element.left(element.length() - 9));
-    }
-    else {
-      return cmp_->Matches(element);
-    }
-  }
- private:
-  QScopedPointer<FilterParserSearchTermComparator> cmp_;
-};
-
 class FilterParserRatingComparatorDecorator : public FilterParserSearchTermComparator {
  public:
   explicit FilterParserRatingComparatorDecorator(FilterParserSearchTermComparator *cmp) : cmp_(cmp) {}
-  bool Matches(const QString &element) const override {
-    return cmp_->Matches(QString::number(lround(element.toDouble() * 10.0)));
+  bool Matches(const QVariant &value) const override {
+    return cmp_->Matches(QString::number(lround(value.toDouble() * 10.0)));
   }
  private:
   QScopedPointer<FilterParserSearchTermComparator> cmp_;
 };
 
 #endif  // FILTERPARSERSEARCHCOMPARATORS_H
-

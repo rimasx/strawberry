@@ -25,8 +25,6 @@
 #include "config.h"
 
 #include <QSortFilterProxyModel>
-#include <QMap>
-#include <QSet>
 #include <QScopedPointer>
 #include <QString>
 
@@ -47,9 +45,7 @@ class PlaylistFilter : public QSortFilterProxyModel {
   bool filterAcceptsRow(const int source_row, const QModelIndex &source_parent) const override;
 
   void SetFilterString(const QString &filter_string);
-
   QString filter_string() const { return filter_string_; }
-  QMap<QString, int> column_names() const { return column_names_; }
 
  private:
   // Mutable because they're modified from filterAcceptsRow() const
@@ -59,9 +55,6 @@ class PlaylistFilter : public QSortFilterProxyModel {
 #else
   mutable uint query_hash_;
 #endif
-
-  QMap<QString, int> column_names_;
-  QSet<int> numerical_columns_;
   QString filter_string_;
 };
 

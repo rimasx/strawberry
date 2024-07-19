@@ -97,7 +97,6 @@ set(SOURCES
   collection/collectionfilteroptions.cpp
   collection/collectionfilterwidget.cpp
   collection/collectionfilter.cpp
-  collection/collectionfilterparser.cpp
   collection/collectionplaylistitem.cpp
   collection/collectionquery.cpp
   collection/savedgroupingmanager.cpp
@@ -110,7 +109,6 @@ set(SOURCES
   playlist/playlistcontainer.cpp
   playlist/playlistdelegates.cpp
   playlist/playlistfilter.cpp
-  playlist/playlistfilterparser.cpp
   playlist/playlistheader.cpp
   playlist/playlistitem.cpp
   playlist/playlistlistcontainer.cpp
